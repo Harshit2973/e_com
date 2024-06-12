@@ -1,5 +1,5 @@
 from rest_framework import serializers # type: ignore
-from .models import Category, Customer, Product, Order
+from .models import Category, Customer, Product, Order,Message
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers # type: ignore
@@ -81,3 +81,9 @@ class EmailLoginSerializer(serializers.Serializer):
         else:
             raise serializers.ValidationError("Must include 'email' and 'password'")
         return data
+class MessageSerializer(serializers.ModelSerializer):
+    sender = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ['sender', 'message', 'is_read_by_admin']

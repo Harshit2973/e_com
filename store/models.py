@@ -1,6 +1,7 @@
 from django.db import models
 import datetime
 
+
 # Categories of Product
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -33,7 +34,7 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
-
+    
 class Order(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -45,3 +46,12 @@ class Order(models.Model):
 
     def __str__(self):
         return f'Order {self.id} for {self.product.name}'
+class Message(models.Model):
+    sender = models.CharField(max_length=100)
+    message = models.TextField()
+    is_read_by_admin = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender}: {self.message}"
+    
