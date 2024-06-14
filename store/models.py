@@ -5,13 +5,13 @@ import datetime
 # Categories of Product
 class Category(models.Model):
     name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        verbose_name_plural='categories'
-
+    try:
+        def __str__(self):
+            return self.name
+        class Meta:
+            verbose_name_plural='categories'
+    except:
+        Message.sucess()
 class Customer(models.Model):
     first_name = models.CharField(max_length=120)
     last_name = models.CharField(max_length=100)

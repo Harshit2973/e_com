@@ -1,26 +1,51 @@
 from rest_framework import viewsets, status # type: ignore
 from rest_framework.response import Response # type: ignore
 from rest_framework.permissions import AllowAny, IsAuthenticated # type: ignore
-from rest_framework.authtoken.models import Token # type: ignore
-from .serializers import SignUpSerializer, EmailLoginSerializer, CategorySerializer, CustomerSerializer, ProductSerializer, OrderSerializer,MessageSerializer
-from .models import Category, Customer, Product, Order,Message
-from django.contrib.auth import login, logout
 from rest_framework.views import APIView # type: ignore
-from rest_framework import status # type: ignore
+from .serializers import (
+    SignUpSerializer,
+    EmailLoginSerializer,
+    CategorySerializer,
+    CustomerSerializer,
+    ProductSerializer,
+    OrderSerializer,
+    MessageSerializer
+)
+from .models import Category, Customer, Product, Order, Message
+from django.contrib.auth import login, logout
+from rest_framework.authtoken.models import Token # type: ignore
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action # type: ignore
 
-
-class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+class CategoryViewSet(viewsets.ViewSet):
     serializer_class = CategorySerializer
 
-class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+    def list(self, request):
+        category_name = request.query_params.get('name')
 
+        if not category_name:
+            return Response({"message": "Category name parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            category = Category.objects.get(name__iexact=category_name)
+            products = Product.objects.filter(category=category)
+            product_serializer = ProductSerializer(products, many=True)
+            return Response(product_serializer.data, status=status.HTTP_200_OK)
+        except Category.DoesNotExist:
+            return Response({"message": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    def get_queryset(self):
+        queryset = Product.objects.all()
+        category_name = self.request.query_params.get('category_name', None)
+        if category_name:
+            queryset = queryset.filter(category__name__iexact=category_name)
+        return queryset
+class CustomerViewSet(viewsets.ModelViewSet):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
 class ProductImageView(APIView):
     def get(self, request, pk):
         try:
@@ -29,6 +54,7 @@ class ProductImageView(APIView):
             return Response({'image_url': image_url}, status=status.HTTP_200_OK)
         except Product.DoesNotExist:
             return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
@@ -65,6 +91,7 @@ class LogoutViewSet(viewsets.ViewSet):
             return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
             return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
