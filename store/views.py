@@ -1,12 +1,13 @@
 # store/views.py
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.parsers import FileUploadParser
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
 from .models import Category, Customer, Product, Order, Message
-from .serializers import CategorySerializer, CustomerSerializer, ProductSerializer, OrderSerializer, MessageSerializer,SignUpSerializer,ProductImageSerializer
+from .serializers import CategorySerializer, CustomerSerializer, ProductSerializer, OrderSerializer, SignUpSerializer, LoginSerializer, MessageSerializer
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -23,19 +24,19 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-class SignupViewSet(viewsets.ModelViewSet):
+class SignUpViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = SignUpSerializer
 
 class LoginViewSet(viewsets.ViewSet):
     def create(self, request):
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
 
-        user = authenticate(username=username, password=password)
+        customer = authenticate(username=email, password=password)
 
-        if user is not None:
-            login(request, user)
+        if customer is not None:
+            login(request, customer)
             return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -59,3 +60,11 @@ class ProductImageView(APIView):
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
+
+class SessionKeyViewSet(APIView):
+    def get(self, request, *args, **kwargs):
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+        return Response({"session_key": session_key}, status=status.HTTP_200_OK)

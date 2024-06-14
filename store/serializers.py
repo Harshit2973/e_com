@@ -23,26 +23,31 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
-class SignupSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(write_only=True)
+
     class Meta:
         model = Customer
-        fields = ['first_name', 'last_name', 'phone', 'email', 'password']
+        fields = ['first_name', 'last_name', 'phone', 'email', 'password', 'password2']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return data
 
     def create(self, validated_data):
-        user = Customer.objects.create_user(**validated_data)
-        return user
+        validated_data.pop('password2')
+        customer = Customer.objects.create(**validated_data)
+        customer.set_password(validated_data['password'])
+        customer.save()
+        return customer
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    email = serializers.EmailField()
     password = serializers.CharField()
-
-class LogoutSerializer(serializers.Serializer):
-    pass
-
-class ProductImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Product
-        fields = ['image']
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
